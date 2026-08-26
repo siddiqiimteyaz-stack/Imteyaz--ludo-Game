@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>हंसी वाला लूडो</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">🎲 हंसी वाला लूडो</header>
+
+<!-- Mode चुनने वाली शुरुआती screen -->
+<div id="modeScreen" class="modeScreen">
+  <h2>कैसे खेलना है?</h2>
+  <button id="vsAiBtn" class="modeBtn">🤖 Computer (AI) के खिलाफ़</button>
+  <button id="pass4Btn" class="modeBtn">👨‍👩‍👧‍👦 4 दोस्त (एक मोबाइल पर बारी-बारी)</button>
+</div>
+
+<!-- असली खेल वाला हिस्सा -->
+<div id="gameScreen" class="gameScreen" style="display:none;">
+
+  <div class="statusBar">
+    <span id="turnText">बारी: लाल</span>
+    <span id="diceValueText"></span>
+  </div>
+
+  <div id="board" class="board"></div>
+
+  <div class="controls">
+    <button id="rollDiceBtn" class="rollBtn">🎲 Dice चलाएं</button>
+    <button id="restartBtn" class="restartBtn">🔄 दोबारा शुरू करें</button>
+  </div>
+
+  <p id="messageText" class="messageText"></p>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
