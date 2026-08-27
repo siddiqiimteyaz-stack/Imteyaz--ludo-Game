@@ -20,21 +20,17 @@
 <!-- असली खेल वाला हिस्सा -->
 <div id="gameScreen" class="gameScreen" style="display:none;">
 
-  <div id="statusBar" class="statusBar">
-    <span id="turnText">बारी: लाल</span>
-    <div id="diceFace" class="diceFace">
-      <div class="dot" style="visibility:hidden;"></div>
-    </div>
+  <div id="diceFace" class="diceFace turn-red">
+    <div class="dot" style="visibility:hidden;"></div>
   </div>
 
   <div id="board" class="board"></div>
 
+  <p id="messageText" class="messageText">🎲 पासे पर टैप करें</p>
+
   <div class="controls">
-    <button id="rollDiceBtn" class="rollBtn">🎲 Dice चलाएं</button>
     <button id="restartBtn" class="restartBtn">🔄 दोबारा शुरू करें</button>
   </div>
-
-  <p id="messageText" class="messageText"></p>
 </div>
 
 <script src="game.js"></script>

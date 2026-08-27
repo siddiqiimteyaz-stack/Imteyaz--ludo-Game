@@ -46,37 +46,28 @@ body {
   padding: 10px;
 }
 
-.statusBar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: #2d2d2d;
-  border-radius: 10px;
-  margin-bottom: 10px;
-  font-size: 16px;
-  font-weight: bold;
-  border-left: 8px solid #888;
-  transition: border-color .2s;
-}
-.statusBar.turn-red { border-left-color: #e53935; }
-.statusBar.turn-green { border-left-color: #43a047; }
-.statusBar.turn-yellow { border-left-color: #fdd835; }
-.statusBar.turn-blue { border-left-color: #1e88e5; }
-
-/* ===== असली Dice Face (dots वाला) ===== */
+/* ===== असली Dice Face (dots वाला) — अब यही टैप करने वाली चीज़ है ===== */
 .diceFace {
-  width: 46px;
-  height: 46px;
+  width: 76px;
+  height: 76px;
   background: #fff;
-  border-radius: 8px;
+  border-radius: 14px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
-  padding: 5px;
-  gap: 2px;
-  box-shadow: 0 2px 6px rgba(0,0,0,.5);
+  padding: 9px;
+  gap: 4px;
+  box-shadow: 0 3px 10px rgba(0,0,0,.5);
+  margin: 0 auto 12px auto;
+  cursor: pointer;
+  border: 5px solid #888;
+  transition: border-color .2s, transform .15s;
 }
+.diceFace:active { transform: scale(.94); }
+.diceFace.turn-red { border-color: #e53935; }
+.diceFace.turn-green { border-color: #43a047; }
+.diceFace.turn-yellow { border-color: #fdd835; }
+.diceFace.turn-blue { border-color: #1e88e5; }
 .diceFace .dot {
   border-radius: 50%;
   background: #222;
@@ -84,15 +75,32 @@ body {
   height: 100%;
 }
 .diceFace.rolling {
-  animation: diceShake .55s ease-in-out;
+  animation: diceSpin .6s ease-in-out;
 }
-@keyframes diceShake {
+@keyframes diceSpin {
   0%   { transform: rotate(0deg) scale(1); }
-  20%  { transform: rotate(-18deg) scale(1.05); }
-  40%  { transform: rotate(15deg) scale(1.05); }
-  60%  { transform: rotate(-10deg) scale(1.05); }
-  80%  { transform: rotate(8deg) scale(1.05); }
-  100% { transform: rotate(0deg) scale(1); }
+  25%  { transform: rotate(120deg) scale(1.1); }
+  50%  { transform: rotate(240deg) scale(1.1); }
+  75%  { transform: rotate(340deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+/* ===== Safe Cells — सभी को (सिर्फ़ start नहीं) साफ़ डेकोरेशन के साथ ===== */
+.cell.safe-neutral {
+  background: repeating-linear-gradient(
+    45deg,
+    #e3e3e3,
+    #e3e3e3 6px,
+    #d3d3d3 6px,
+    #d3d3d3 12px
+  );
+}
+.cell.safe-neutral::after {
+  content: "★";
+  position: absolute;
+  font-size: 11px;
+  color: rgba(0,0,0,.4);
+  pointer-events: none;
 }
 
 /* ===== Board ===== */
@@ -175,8 +183,8 @@ body {
 
 /* ===== Pieces ===== */
 .piece {
-  width: 82%;
-  height: 82%;
+  width: 88%;
+  height: 88%;
   border-radius: 50%;
   border: 3px solid rgba(0,0,0,.4);
   cursor: pointer;
@@ -193,8 +201,8 @@ body {
 }
 .piece.stacked {
   position: absolute;
-  width: 64%;
-  height: 64%;
+  width: 74%;
+  height: 74%;
 }
 .stackBadge {
   position: absolute;

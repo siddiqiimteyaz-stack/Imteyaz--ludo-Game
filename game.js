@@ -142,6 +142,12 @@ function buildBoardDom() {
     const startPos = SHARED_PATH[START_INDEX[color]];
     getCellDom(startPos[0], startPos[1]).classList.add("start-" + color);
   });
+  // बाक़ी safe cells (जो किसी एक रंग की नहीं, सबके लिए साझा हैं) भी दिखाएं
+  SAFE_INDEXES.forEach(idx => {
+    const pos = SHARED_PATH[idx];
+    const dom = getCellDom(pos[0], pos[1]);
+    if (!dom.className.includes("start-")) dom.classList.add("safe-neutral");
+  });
 
   // हर रंग का home-stretch रंगें
   COLORS.forEach(color => {
@@ -231,12 +237,12 @@ function renderBoard() {
           piece.style.top = "42%";
         }
       } else if (list.length > 1) {
-        // एक ही खाने में कई गोटियाँ — एक के ऊपर एक (हल्के तिरछे offset के साथ)
+        // एक ही खाने में कई गोटियाँ — एक के ऊपर एक, पर थोड़ा झलकते हुए
         piece.classList.add("stacked");
-        const offsetX = idx * 9 - (list.length - 1) * 4.5;
-        const offsetY = idx * 9 - (list.length - 1) * 4.5;
-        piece.style.left = `calc(50% - 32% + ${offsetX}%)`;
-        piece.style.top = `calc(50% - 32% + ${offsetY}%)`;
+        const offsetX = idx * 15 - (list.length - 1) * 7.5;
+        const offsetY = idx * 15 - (list.length - 1) * 7.5;
+        piece.style.left = `calc(50% - 37% + ${offsetX}%)`;
+        piece.style.top = `calc(50% - 37% + ${offsetY}%)`;
         piece.style.zIndex = (idx + 1) + "";
       }
 
@@ -304,7 +310,7 @@ function playDiceSound() {
 // =========================
 // Dice रोल करना
 // =========================
-document.getElementById("rollDiceBtn").addEventListener("click", () => {
+document.getElementById("diceFace").addEventListener("click", () => {
   if (awaitingMove) return; // पहले चाल चलनी ज़रूरी है
   const current = players[currentPlayerIndex];
 
@@ -346,7 +352,7 @@ function afterDiceRolled(current) {
       movePiece(current, chosen);
     }, 700);
   } else {
-    setMessage("अब कोई चमकती हुई गोटी दबाएं");
+    setMessage(`${COLOR_NAMES[current]} की बारी — ${diceValue} आया, अब कोई चमकती गोटी दबाएं`);
   }
 }
 
@@ -440,16 +446,14 @@ function handleTurnEnd(extraTurn) {
   updateStatus();
 
   if (gameMode === "ai" && players[currentPlayerIndex] !== "red") {
-    setTimeout(() => document.getElementById("rollDiceBtn").click(), 600);
+    setTimeout(() => document.getElementById("diceFace").click(), 600);
   }
 }
 
 function updateStatus() {
   const current = players[currentPlayerIndex];
-  document.getElementById("turnText").textContent = "बारी: " + COLOR_NAMES[current];
-  const statusBar = document.getElementById("statusBar");
-  statusBar.className = "statusBar turn-" + current;
-  // dice की पिछली value यहीं दिखती रहेगी — अगली बार roll करने पर ही बदलेगी
+  const diceFaceEl = document.getElementById("diceFace");
+  diceFaceEl.className = "diceFace turn-" + current;
 }
 
 function setMessage(msg) {
@@ -459,7 +463,9 @@ function setMessage(msg) {
 function checkWinner(color) {
   if (piecePositions[color].every(p => p === 56)) {
     setMessage(`🎉🎉 ${COLOR_NAMES[color]} जीत गया! 🎉🎉`);
-    document.getElementById("rollDiceBtn").disabled = true;
+    const diceFaceEl = document.getElementById("diceFace");
+    diceFaceEl.style.pointerEvents = "none";
+    diceFaceEl.style.opacity = "0.4";
   }
 }
 
@@ -504,5 +510,7 @@ document.getElementById("pass4Btn").addEventListener("click", () => initGame("pa
 document.getElementById("restartBtn").addEventListener("click", () => {
   document.getElementById("gameScreen").style.display = "none";
   document.getElementById("modeScreen").style.display = "block";
-  document.getElementById("rollDiceBtn").disabled = false;
+  const diceFaceEl = document.getElementById("diceFace");
+  diceFaceEl.style.pointerEvents = "";
+  diceFaceEl.style.opacity = "";
 });
