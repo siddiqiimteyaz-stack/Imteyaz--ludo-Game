@@ -225,7 +225,7 @@ function renderBoard() {
       const { color, pieceIndex } = item;
       const mood = pieceMoods[color][pieceIndex];
       const piece = document.createElement("img");
-      piece.src = `${mood}_${color}.png`;
+      piece.src = `${color}_${mood}.png`;
       piece.style.animationDelay = (Math.random() * 1.4).toFixed(2) + "s";
       piece.className = "piece " + color;
       piece.dataset.color = color;
@@ -412,11 +412,11 @@ function movePiece(color, pieceIndex) {
   if (newPos === 56) {
     pieceMoods[color][pieceIndex] = "jeet";
   } else if (oldPos === -1) {
-    pieceMoods[color][pieceIndex] = "khushi"; // पहली बार बाहर निकली
-  } else if (diceValue === 6) {
-    pieceMoods[color][pieceIndex] = "daudna";
+    pieceMoods[color][pieceIndex] = "khushi"; // घर से बाहर निकलना
+  } else if (diceValue >= 4) {
+    pieceMoods[color][pieceIndex] = "daudna"; // तेज़ दौड़ना
   } else {
-    pieceMoods[color][pieceIndex] = "ladkhadana";
+    pieceMoods[color][pieceIndex] = "udaas"; // 1-2-3 पर धीरे उदास
   }
 
   let captured = false;
@@ -435,7 +435,7 @@ function movePiece(color, pieceIndex) {
             const [orr, occ] = LOCAL_PATH[otherColor][otherPos];
             if (orr === r && occ === c) {
               piecePositions[otherColor][i] = -1; // वापस यार्ड में
-              pieceMoods[otherColor][i] = "udaas"; // दुखी होकर लौटी
+              pieceMoods[otherColor][i] = "ladkhadana"; // चक्कर खाते हुए लौटी
               captured = true;
             }
           }
