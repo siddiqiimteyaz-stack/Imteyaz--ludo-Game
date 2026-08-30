@@ -1,0 +1,256 @@
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+
+body {
+  background: #101010;
+  color: #fff;
+  min-height: 100vh;
+}
+
+.topbar {
+  background: #1565ff;
+  padding: 16px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(0,0,0,.35);
+}
+
+/* ===== Mode Screen ===== */
+.modeScreen {
+  max-width: 420px;
+  margin: 60px auto;
+  text-align: center;
+  padding: 20px;
+}
+.modeScreen h2 { margin-bottom: 24px; }
+.modeBtn {
+  display: block;
+  width: 100%;
+  padding: 18px;
+  margin-bottom: 14px;
+  border: none;
+  border-radius: 12px;
+  background: #2d2d2d;
+  color: #fff;
+  font-size: 17px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.modeBtn:hover { background: #3a3a3a; }
+.modeBtn:active { transform: scale(.97); }
+
+/* ===== Game Screen ===== */
+.gameScreen {
+  max-width: 480px;
+  margin: 10px auto;
+  padding: 10px;
+}
+
+/* ===== असली Dice Face (dots वाला) — अब यही टैप करने वाली चीज़ है ===== */
+.diceFace {
+  width: 76px;
+  height: 76px;
+  background: #fff;
+  border-radius: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  padding: 9px;
+  gap: 4px;
+  box-shadow: 0 3px 10px rgba(0,0,0,.5);
+  margin: 0 auto 12px auto;
+  cursor: pointer;
+  border: 5px solid #888;
+  transition: border-color .2s, transform .15s;
+}
+.diceFace:active { transform: scale(.94); }
+.diceFace.turn-red { border-color: #e53935; }
+.diceFace.turn-green { border-color: #43a047; }
+.diceFace.turn-yellow { border-color: #fdd835; }
+.diceFace.turn-blue { border-color: #1e88e5; }
+.diceFace .dot {
+  border-radius: 50%;
+  background: #222;
+  width: 100%;
+  height: 100%;
+}
+.diceFace.rolling {
+  animation: diceSpin .6s ease-in-out;
+}
+@keyframes diceSpin {
+  0%   { transform: rotate(0deg) scale(1); }
+  25%  { transform: rotate(120deg) scale(1.1); }
+  50%  { transform: rotate(240deg) scale(1.1); }
+  75%  { transform: rotate(340deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+/* ===== Safe Cells — सभी को (सिर्फ़ start नहीं) साफ़ डेकोरेशन के साथ ===== */
+.cell.safe-neutral {
+  background: repeating-linear-gradient(
+    45deg,
+    #e3e3e3,
+    #e3e3e3 6px,
+    #d3d3d3 6px,
+    #d3d3d3 12px
+  );
+}
+.cell.safe-neutral::after {
+  content: "★";
+  position: absolute;
+  font-size: 11px;
+  color: rgba(0,0,0,.4);
+  pointer-events: none;
+}
+
+/* ===== Board ===== */
+.board {
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  grid-template-rows: repeat(15, 1fr);
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: #1c1c1c;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  border: 3px solid #444;
+}
+
+.cell {
+  border: 0.5px solid #2a2a2a;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: visible;
+}
+
+.cell.path { background: #eee; }
+.cell.center { background: #444; }
+
+/* हर रंग की अपनी शुरुआती (start) cell — अब generic हरे रंग की बजाय
+   उसी रंग के हल्के shade में और एक तारे (★) के निशान के साथ */
+.cell.start-red { background: #ffb3b3; }
+.cell.start-green { background: #a8f0a8; }
+.cell.start-yellow { background: #ffe985; }
+.cell.start-blue { background: #a9cbff; }
+.cell.start-red::after,
+.cell.start-green::after,
+.cell.start-yellow::after,
+.cell.start-blue::after {
+  content: "★";
+  position: absolute;
+  font-size: 11px;
+  color: rgba(0,0,0,.45);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.cell.yard-red,
+.cell.yard-green,
+.cell.yard-yellow,
+.cell.yard-blue {
+  border: none;
+}
+.cell.yard-red { background: #ffdada; }
+.cell.yard-green { background: #d7ffd7; }
+.cell.yard-yellow { background: #fff6c9; }
+.cell.yard-blue { background: #d6e6ff; }
+
+.yardBoxCell.yard-red { background: #ffb3b3 !important; }
+.yardBoxCell.yard-green { background: #a8f0a8 !important; }
+.yardBoxCell.yard-yellow { background: #ffe985 !important; }
+.yardBoxCell.yard-blue { background: #a9cbff !important; }
+
+.cell.home-red { background: #ff8080; }
+.cell.home-green { background: #7ce07c; }
+.cell.home-yellow { background: #ffe066; }
+.cell.home-blue { background: #7fb3ff; }
+
+.yardBox {
+  position: absolute;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 6px;
+  padding: 10px;
+  width: 100%;
+  height: 100%;
+}
+
+/* ===== Pieces (अब असली Character तस्वीरें) ===== */
+.piece {
+  width: 92%;
+  height: 92%;
+  object-fit: contain;
+  cursor: pointer;
+  transition: transform .15s;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.5));
+  position: relative;
+  z-index: 1;
+  pointer-events: none; /* click पूरे group/cell पर लगेगा, अलग-अलग piece पर नहीं */
+  animation: idleBob 1.6s ease-in-out infinite;
+}
+.piece.stacked {
+  position: absolute;
+  width: 78%;
+  height: 78%;
+}
+.stackBadge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: rgba(0,0,0,.75);
+  color: #fff;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 1px 5px;
+  border-radius: 10px;
+  z-index: 5;
+  pointer-events: none;
+}
+.piece.movable {
+  animation: idleBob 1.6s ease-in-out infinite, pulse 0.8s infinite;
+  filter: drop-shadow(0 0 6px #fff) drop-shadow(0 2px 4px rgba(0,0,0,.5));
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+@keyframes idleBob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-6%) rotate(-3deg); }
+}
+
+/* ===== Controls ===== */
+.controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+.rollBtn, .restartBtn {
+  flex: 1;
+  padding: 16px;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+}
+.rollBtn { background: #1565ff; color: white; }
+.rollBtn:disabled { background: #444; color: #888; cursor: not-allowed; }
+.restartBtn { background: #444; color: white; }
+
+.messageText {
+  text-align: center;
+  margin-top: 12px;
+  min-height: 24px;
+  font-size: 15px;
+  color: #ffd54f;
+}
+
+@media(max-width: 500px) {
+  .piece { font-size: 8px; }
+}
