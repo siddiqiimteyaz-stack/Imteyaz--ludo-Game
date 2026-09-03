@@ -224,12 +224,16 @@ function renderBoard() {
     list.forEach((item, idx) => {
       const { color, pieceIndex } = item;
       const mood = pieceMoods[color][pieceIndex];
-      const piece = document.createElement("img");
-      piece.src = `${color}_${mood}.png`;
+      // बाहरी wrapper (जगह/glow/idle-bob के लिए) — अंदर असली animated sprite
+      const piece = document.createElement("div");
       piece.style.animationDelay = (Math.random() * 1.4).toFixed(2) + "s";
       piece.className = "piece " + color;
       piece.dataset.color = color;
       piece.dataset.pieceIndex = pieceIndex;
+
+      const spriteInner = document.createElement("div");
+      spriteInner.className = `spriteInner sprite-${color}-${mood}`;
+      piece.appendChild(spriteInner);
 
       const isMovable = movable.includes(pieceIndex) && color === players[currentPlayerIndex];
       if (isMovable) piece.classList.add("movable");
