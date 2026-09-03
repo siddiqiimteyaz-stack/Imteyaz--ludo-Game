@@ -67,6 +67,7 @@ let piecePositions = {}; // piecePositions[color][pieceIndex] = -1 (यार्
 let pieceMoods = {};     // pieceMoods[color][pieceIndex] = "khushi" | "ladkhadana" | "daudna" | "gussa" | "udaas" | "jeet"
 let awaitingMove = false;
 let consecutiveSixes = 0;
+let movingPieceKey = null; // "color_pieceIndex" — सिर्फ़ यही गोटी अभी असल में हिल रही है, बाक़ी सब स्थिर
 
 function initGame(mode) {
   gameMode = mode;
@@ -232,7 +233,8 @@ function renderBoard() {
       piece.dataset.pieceIndex = pieceIndex;
 
       const spriteInner = document.createElement("div");
-      spriteInner.className = `spriteInner sprite-${color}-${mood}`;
+      const isThisPieceMoving = movingPieceKey === (color + "_" + pieceIndex);
+      spriteInner.className = `spriteInner sprite-${color}-${mood}` + (isThisPieceMoving ? " is-moving" : "");
       piece.appendChild(spriteInner);
 
       const isMovable = movable.includes(pieceIndex) && color === players[currentPlayerIndex];
@@ -418,8 +420,9 @@ function movePiece(color, pieceIndex) {
 
   awaitingMove = false;
   isAnimatingMove = true;
+  movingPieceKey = color + "_" + pieceIndex;
 
-  // यार्ड से बाहर निकलना = सीधे एक ही कदम; बाक़ी movement = दांव जितने कदम, एक-एक cell
+  // यार्ड से बाहर निकलना = 1 कदम; बाक़ी movement = दांव जितने कदम, एक-एक cell
   const steps = oldPos === -1 ? [0] : [];
   if (oldPos !== -1) {
     for (let p = oldPos + 1; p <= newPos; p++) steps.push(p);
@@ -427,16 +430,16 @@ function movePiece(color, pieceIndex) {
 
   let idx = 0;
   function stepNext() {
-    if (idx < steps.length - 1) {
-      // बीच वाला कदम — track पर असल में दौड़ते हुए दिखाएं
+    if (idx < steps.length) {
+      // हर कदम पर — चलते हुए/दौड़ते हुए दिखाएं (असल motion यहीं दिखती है)
       piecePositions[color][pieceIndex] = steps[idx];
       pieceMoods[color][pieceIndex] = "daudna";
       renderBoard();
       idx++;
       setTimeout(stepNext, STEP_DELAY);
     } else {
-      // आख़िरी कदम — यहीं असली mood और capturing logic लगेगी
-      piecePositions[color][pieceIndex] = steps[idx];
+      // चलना ख़त्म — अब स्थिर हो जाएं, यहीं असली mood और capturing logic लगेगी
+      movingPieceKey = null;
       finalizeMove(color, pieceIndex, oldPos, newPos);
     }
   }
