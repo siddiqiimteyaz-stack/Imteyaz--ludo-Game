@@ -336,7 +336,7 @@ function playDiceSound() {
 // Dice रोल करना
 // =========================
 document.getElementById("diceFace").addEventListener("click", () => {
-  if (awaitingMove) return; // पहले चाल चलनी ज़रूरी है
+  if (awaitingMove || isAnimatingMove) return; // पहले चाल चलनी ज़रूरी है / गोटी अभी चल रही है
   const current = players[currentPlayerIndex];
 
   const diceFaceEl = document.getElementById("diceFace");
@@ -398,7 +398,7 @@ function getMovablePieces(color, dice) {
 // 6. गोटी पर क्लिक करके चलाना
 // =========================
 function onPieceClick(color, pieceIndex) {
-  if (!awaitingMove) return;
+  if (!awaitingMove || isAnimatingMove) return;
   if (color !== players[currentPlayerIndex]) return;
   const movable = getMovablePieces(color, diceValue);
   if (!movable.includes(pieceIndex)) return;
@@ -407,12 +407,44 @@ function onPieceClick(color, pieceIndex) {
   movePiece(color, pieceIndex);
 }
 
+// गोटी को track पर एक-एक cell करके चलाना (असली movement जैसा एहसास)
+let isAnimatingMove = false;
+const STEP_DELAY = 220; // हर cell पर रुकने का समय (ms)
+
 function movePiece(color, pieceIndex) {
+  if (isAnimatingMove) return;
   const oldPos = piecePositions[color][pieceIndex];
   const newPos = oldPos === -1 ? 0 : oldPos + diceValue;
-  piecePositions[color][pieceIndex] = newPos;
 
-  // इस चाल के हिसाब से गोटी का mood तय करें
+  awaitingMove = false;
+  isAnimatingMove = true;
+
+  // यार्ड से बाहर निकलना = सीधे एक ही कदम; बाक़ी movement = दांव जितने कदम, एक-एक cell
+  const steps = oldPos === -1 ? [0] : [];
+  if (oldPos !== -1) {
+    for (let p = oldPos + 1; p <= newPos; p++) steps.push(p);
+  }
+
+  let idx = 0;
+  function stepNext() {
+    if (idx < steps.length - 1) {
+      // बीच वाला कदम — track पर असल में दौड़ते हुए दिखाएं
+      piecePositions[color][pieceIndex] = steps[idx];
+      pieceMoods[color][pieceIndex] = "daudna";
+      renderBoard();
+      idx++;
+      setTimeout(stepNext, STEP_DELAY);
+    } else {
+      // आख़िरी कदम — यहीं असली mood और capturing logic लगेगी
+      piecePositions[color][pieceIndex] = steps[idx];
+      finalizeMove(color, pieceIndex, oldPos, newPos);
+    }
+  }
+  stepNext();
+}
+
+function finalizeMove(color, pieceIndex, oldPos, newPos) {
+  // इस चाल के हिसाब से गोटी का mood तय करें (सिर्फ़ आख़िरी/रुकी हुई जगह पर)
   if (newPos === 56) {
     pieceMoods[color][pieceIndex] = "jeet";
   } else if (oldPos === -1) {
@@ -449,7 +481,7 @@ function movePiece(color, pieceIndex) {
     }
   }
 
-  awaitingMove = false;
+  isAnimatingMove = false;
   renderBoard();
 
   if (newPos === 56) {
