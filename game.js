@@ -440,6 +440,33 @@ function getTargetCenter(color, pos) {
   return getCellCenterOnBoard(cellDom);
 }
 
+// किसी logical position का [row, col] निकालना (दिशा पता करने के लिए)
+function getGridPos(color, pos) {
+  if (pos === -1) {
+    // यार्ड का लगभग center
+    const q = YARD_QUADRANT[color];
+    return [q.rowStart + 2, q.colStart + 2];
+  }
+  if (pos === 56) return [7, 7];
+  return LOCAL_PATH[color][pos];
+}
+
+// दो positions के बीच दिशा: "right" | "left" | "up" | "down" | "none"
+function getMoveDirection(color, fromPos, toPos) {
+  const [r1, c1] = getGridPos(color, fromPos);
+  const [r2, c2] = getGridPos(color, toPos);
+  const dc = c2 - c1;
+  const dr = r2 - r1;
+  if (Math.abs(dc) >= Math.abs(dr)) {
+    // ज्यादातर horizontal
+    if (dc > 0) return "right";
+    if (dc < 0) return "left";
+  }
+  if (dr > 0) return "down";
+  if (dr < 0) return "up";
+  return "none";
+}
+
 function movePiece(color, pieceIndex) {
   if (isAnimatingMove) return;
   const oldPos = piecePositions[color][pieceIndex];
@@ -478,21 +505,37 @@ function movePiece(color, pieceIndex) {
   floater.style.position = "absolute";
   floater.style.zIndex = "50";
   floater.style.pointerEvents = "none";
-  floater.style.transition = `left ${STEP_DURATION}ms linear, top ${STEP_DURATION}ms linear`;
+  floater.style.transition = `left ${STEP_DURATION}ms linear, top ${STEP_DURATION}ms linear, transform ${STEP_DURATION}ms linear`;
   floater.style.margin = "0";
-  floater.style.transform = "translate(-50%, -50%)";
 
   const spriteInner = document.createElement("div");
   spriteInner.className = `spriteInner sprite-${color}-${travelMood} is-moving`;
   floater.appendChild(spriteInner);
 
-  // शुरू की जगह
+  // दिशा के हिसाब से स्प्राइट पलटना (बायाँ जाने पर mirror)
+  let facingLeft = false;
+  function applyFacing(dir) {
+    if (dir === "left") facingLeft = true;
+    else if (dir === "right") facingLeft = false;
+    // up/down पर पिछली facing बनाए रखें
+    const scaleX = facingLeft ? -1 : 1;
+    floater.style.transform = `translate(-50%, -50%) scaleX(${scaleX})`;
+  }
+
+  // शुरू की जगह + शुरुआती दिशा
   const startCenter = getTargetCenter(color, oldPos === -1 ? -1 : oldPos);
   if (startCenter) {
     floater.style.width  = startCenter.size + "px";
     floater.style.height = startCenter.size + "px";
     floater.style.left   = startCenter.left + "px";
     floater.style.top    = startCenter.top + "px";
+  }
+  // पहले कदम की दिशा से शुरू करें
+  if (steps.length > 0) {
+    const firstDir = getMoveDirection(color, oldPos === -1 ? -1 : oldPos, steps[0]);
+    applyFacing(firstDir);
+  } else {
+    floater.style.transform = "translate(-50%, -50%)";
   }
 
   board.appendChild(floater);
@@ -505,7 +548,11 @@ function movePiece(color, pieceIndex) {
   let idx = 0;
   function stepNext() {
     if (idx < steps.length) {
+      const fromPos = (idx === 0) ? (oldPos === -1 ? -1 : oldPos) : steps[idx - 1];
       const targetPos = steps[idx];
+      const dir = getMoveDirection(color, fromPos, targetPos);
+      applyFacing(dir);
+
       const center = getTargetCenter(color, targetPos);
       if (center) {
         floater.style.width  = center.size + "px";
@@ -513,7 +560,7 @@ function movePiece(color, pieceIndex) {
         floater.style.left   = center.left + "px";
         floater.style.top    = center.top + "px";
       }
-      // लॉजिकल पोजीशन अपडेट (बाकी गोटियों के लिए)
+      // लॉजिकल पोजीशन अपडेट
       piecePositions[color][pieceIndex] = targetPos;
       idx++;
       setTimeout(stepNext, STEP_DURATION);
