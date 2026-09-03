@@ -64,7 +64,6 @@ let players = [];    // खेल रहे रंगों की list
 let currentPlayerIndex = 0;
 let diceValue = 0;
 let piecePositions = {}; // piecePositions[color][pieceIndex] = -1 (यार्ड में) या 0-56
-let pieceMoods = {};     // pieceMoods[color][pieceIndex] = "khushi" | "ladkhadana" | "daudna" | "gussa" | "udaas" | "jeet"
 let awaitingMove = false;
 let consecutiveSixes = 0;
 let movingPieceKey = null; // "color_pieceIndex" — सिर्फ़ यही गोटी अभी असल में हिल रही है, बाक़ी सब स्थिर
@@ -78,10 +77,8 @@ function initGame(mode) {
   consecutiveSixes = 0;
 
   piecePositions = {};
-  pieceMoods = {};
   COLORS.forEach(c => {
     piecePositions[c] = [-1, -1, -1, -1];
-    pieceMoods[c] = ["khushi", "khushi", "khushi", "khushi"];
   });
 
   document.getElementById("modeScreen").style.display = "none";
@@ -224,17 +221,24 @@ function renderBoard() {
 
     list.forEach((item, idx) => {
       const { color, pieceIndex } = item;
-      const mood = pieceMoods[color][pieceIndex];
-      // बाहरी wrapper (जगह/glow/idle-bob के लिए) — अंदर असली animated sprite
+      const key = color + "_" + pieceIndex;
+      if (movingPieceKey === key) return; // यह गोटी अभी overlay के ज़रिए अलग से animate हो रही है
+
+      // स्थिर (resting) गोटी की तस्वीर सिर्फ़ उसकी जगह से तय होती है:
+      // यार्ड या घर (center) = khushi, बाक़ी track पर कहीं भी = daudna (सामने वाली दिशा, स्थिर)
+      const pos = piecePositions[color][pieceIndex];
+      const restSprite = (pos === -1 || pos === 56)
+        ? `sprite-${color}-khushi-front`
+        : `sprite-${color}-daudna-front`;
+
+      // बाहरी wrapper (जगह/glow के लिए) — अंदर असली sprite तस्वीर
       const piece = document.createElement("div");
-      piece.style.animationDelay = (Math.random() * 1.4).toFixed(2) + "s";
       piece.className = "piece " + color;
       piece.dataset.color = color;
       piece.dataset.pieceIndex = pieceIndex;
 
       const spriteInner = document.createElement("div");
-      const isThisPieceMoving = movingPieceKey === (color + "_" + pieceIndex);
-      spriteInner.className = `spriteInner sprite-${color}-${mood}` + (isThisPieceMoving ? " is-moving" : "");
+      spriteInner.className = `spriteInner ${restSprite}`;
       piece.appendChild(spriteInner);
 
       const isMovable = movable.includes(pieceIndex) && color === players[currentPlayerIndex];
@@ -399,6 +403,49 @@ function getMovablePieces(color, dice) {
 // =========================
 // 6. गोटी पर क्लिक करके चलाना
 // =========================
+// गोटी को track पर असल में smoothly सरकाना (overlay के ज़रिए) — कोई "रील जैसा" रुक-रुक कर animate नहीं
+let isAnimatingMove = false;
+const STEP_DELAY = 260;   // हर cell तक सरकने में लगने वाला समय (ms) — CSS transition से मेल खाता है
+const KHUSHI_FLASH_MS = 550; // यार्ड से निकलने / घर पहुंचने पर खुशी दिखाने का समय
+
+const CELL_PCT = 100 / 15; // हर cell board का कितना % हिस्सा है
+
+// दो cells के row/col compare करके दिशा तय करना (front=नीचे, back=ऊपर, left/right)
+function computeDirection(fromCell, toCell) {
+  if (toCell[1] > fromCell[1]) return "right";
+  if (toCell[1] < fromCell[1]) return "left";
+  if (toCell[0] < fromCell[0]) return "back";
+  if (toCell[0] > fromCell[0]) return "front";
+  return "front";
+}
+
+function createMovingOverlay(color) {
+  const el = document.createElement("div");
+  el.className = "piece overlayPiece " + color;
+  const inner = document.createElement("div");
+  inner.className = "spriteInner";
+  el.appendChild(inner);
+  document.getElementById("board").appendChild(el);
+  return el;
+}
+
+function placeOverlayAtCell(el, cell, animate) {
+  if (!animate) {
+    el.style.transition = "none";
+  }
+  el.style.left = (cell[1] * CELL_PCT) + "%";
+  el.style.top = (cell[0] * CELL_PCT) + "%";
+  if (!animate) {
+    void el.offsetWidth; // reflow — ताकि बिना transition के जगह तुरंत सेट हो जाए
+    el.style.transition = "";
+  }
+}
+
+function setOverlaySprite(el, color, mood, direction, moving) {
+  const inner = el.querySelector(".spriteInner");
+  inner.className = `spriteInner sprite-${color}-${mood}-${direction}` + (moving ? " is-moving" : "");
+}
+
 function onPieceClick(color, pieceIndex) {
   if (!awaitingMove || isAnimatingMove) return;
   if (color !== players[currentPlayerIndex]) return;
@@ -409,64 +456,6 @@ function onPieceClick(color, pieceIndex) {
   movePiece(color, pieceIndex);
 }
 
-// गोटी को track पर एक-एक cell करके स्मूथ चलाना (कदम-दर-कदम, बिना जंप)
-let isAnimatingMove = false;
-const STEP_DURATION = 280; // हर cell तक स्लाइड का समय (ms)
-
-// किसी cell का बोर्ड के अंदर center position (px) निकालना
-function getCellCenterOnBoard(cellDom) {
-  const board = document.getElementById("board");
-  if (!board || !cellDom) return null;
-  const boardRect = board.getBoundingClientRect();
-  const cellRect = cellDom.getBoundingClientRect();
-  return {
-    left: cellRect.left - boardRect.left + cellRect.width / 2,
-    top:  cellRect.top  - boardRect.top  + cellRect.height / 2,
-    size: Math.min(cellRect.width, cellRect.height) * 0.85
-  };
-}
-
-// यार्ड या center के लिए भी position निकालना
-function getTargetCenter(color, pos) {
-  let cellDom;
-  if (pos === -1) {
-    cellDom = document.getElementById("yardBox-" + color);
-  } else if (pos === 56) {
-    cellDom = getCellDom(7, 7);
-  } else {
-    const [r, c] = LOCAL_PATH[color][pos];
-    cellDom = getCellDom(r, c);
-  }
-  return getCellCenterOnBoard(cellDom);
-}
-
-// किसी logical position का [row, col] निकालना (दिशा पता करने के लिए)
-function getGridPos(color, pos) {
-  if (pos === -1) {
-    // यार्ड का लगभग center
-    const q = YARD_QUADRANT[color];
-    return [q.rowStart + 2, q.colStart + 2];
-  }
-  if (pos === 56) return [7, 7];
-  return LOCAL_PATH[color][pos];
-}
-
-// दो positions के बीच दिशा: "right" | "left" | "up" | "down" | "none"
-function getMoveDirection(color, fromPos, toPos) {
-  const [r1, c1] = getGridPos(color, fromPos);
-  const [r2, c2] = getGridPos(color, toPos);
-  const dc = c2 - c1;
-  const dr = r2 - r1;
-  if (Math.abs(dc) >= Math.abs(dr)) {
-    // ज्यादातर horizontal
-    if (dc > 0) return "right";
-    if (dc < 0) return "left";
-  }
-  if (dr > 0) return "down";
-  if (dr < 0) return "up";
-  return "none";
-}
-
 function movePiece(color, pieceIndex) {
   if (isAnimatingMove) return;
   const oldPos = piecePositions[color][pieceIndex];
@@ -475,120 +464,51 @@ function movePiece(color, pieceIndex) {
   awaitingMove = false;
   isAnimatingMove = true;
   movingPieceKey = color + "_" + pieceIndex;
+  renderBoard(); // अब यह गोटी अपनी सामान्य जगह पर नहीं दिखेगी — overlay ही दिखाएगा
 
-  // यात्रा के दौरान कौन सा मूड चलेगा (एक बार तय)
-  let travelMood;
+  const overlay = createMovingOverlay(color);
+
   if (oldPos === -1) {
-    travelMood = "khushi";          // यार्ड से बाहर निकलना
-  } else if (diceValue <= 3) {
-    travelMood = "udaas";            // 1-2-3 पर धीरे उदास चलना
-  } else {
-    travelMood = "daudna";           // 4-5-6 पर तेज़ दौड़ना
-  }
-  pieceMoods[color][pieceIndex] = travelMood;
-
-  // कदमों की सूची
-  const steps = oldPos === -1 ? [0] : [];
-  if (oldPos !== -1) {
-    for (let p = oldPos + 1; p <= newPos; p++) steps.push(p);
+    // यार्ड से बाहर निकलना — sliding नहीं, सीधे track की पहली cell पर खुशी के साथ प्रकट होना
+    placeOverlayAtCell(overlay, LOCAL_PATH[color][0], false);
+    setOverlaySprite(overlay, color, "khushi", "front", true);
+    setTimeout(() => finishMovement(color, pieceIndex, oldPos, newPos, overlay), KHUSHI_FLASH_MS);
+    return;
   }
 
-  const board = document.getElementById("board");
+  // सामान्य track movement — हर cell से होते हुए असल में सरकना
+  const trackEnd = Math.min(newPos, 55);
+  const posList = [];
+  for (let p = oldPos; p <= trackEnd; p++) posList.push(p);
 
-  // पुरानी गोटी को हटाकर एक floating absolute गोटी बनाएं जो स्लाइड करेगी
-  // पहले render करके मौजूदा जगह पर गोटी दिखा दें, फिर उसे उठा लें
-  renderBoard();
+  placeOverlayAtCell(overlay, LOCAL_PATH[color][oldPos], false); // शुरुआती जगह तुरंत (बिना animation)
 
-  // floating piece बनाएं
-  const floater = document.createElement("div");
-  floater.className = "piece " + color + " floating-piece";
-  floater.style.position = "absolute";
-  floater.style.zIndex = "50";
-  floater.style.pointerEvents = "none";
-  floater.style.transition = `left ${STEP_DURATION}ms linear, top ${STEP_DURATION}ms linear, transform ${STEP_DURATION}ms linear`;
-  floater.style.margin = "0";
-
-  const spriteInner = document.createElement("div");
-  spriteInner.className = `spriteInner sprite-${color}-${travelMood} is-moving`;
-  floater.appendChild(spriteInner);
-
-  // दिशा के हिसाब से स्प्राइट पलटना (बायाँ जाने पर mirror)
-  let facingLeft = false;
-  function applyFacing(dir) {
-    if (dir === "left") facingLeft = true;
-    else if (dir === "right") facingLeft = false;
-    // up/down पर पिछली facing बनाए रखें
-    const scaleX = facingLeft ? -1 : 1;
-    floater.style.transform = `translate(-50%, -50%) scaleX(${scaleX})`;
-  }
-
-  // शुरू की जगह + शुरुआती दिशा
-  const startCenter = getTargetCenter(color, oldPos === -1 ? -1 : oldPos);
-  if (startCenter) {
-    floater.style.width  = startCenter.size + "px";
-    floater.style.height = startCenter.size + "px";
-    floater.style.left   = startCenter.left + "px";
-    floater.style.top    = startCenter.top + "px";
-  }
-  // पहले कदम की दिशा से शुरू करें
-  if (steps.length > 0) {
-    const firstDir = getMoveDirection(color, oldPos === -1 ? -1 : oldPos, steps[0]);
-    applyFacing(firstDir);
-  } else {
-    floater.style.transform = "translate(-50%, -50%)";
-  }
-
-  board.appendChild(floater);
-
-  // असली गोटी को छुपा दें (floating दिखेगी)
-  document.querySelectorAll(`.piece[data-color="${color}"][data-piece-index="${pieceIndex}"]`).forEach(p => {
-    p.style.visibility = "hidden";
-  });
-
-  let idx = 0;
+  let idx = 1;
   function stepNext() {
-    if (idx < steps.length) {
-      const fromPos = (idx === 0) ? (oldPos === -1 ? -1 : oldPos) : steps[idx - 1];
-      const targetPos = steps[idx];
-      const dir = getMoveDirection(color, fromPos, targetPos);
-      applyFacing(dir);
-
-      const center = getTargetCenter(color, targetPos);
-      if (center) {
-        floater.style.width  = center.size + "px";
-        floater.style.height = center.size + "px";
-        floater.style.left   = center.left + "px";
-        floater.style.top    = center.top + "px";
-      }
-      // लॉजिकल पोजीशन अपडेट
-      piecePositions[color][pieceIndex] = targetPos;
+    if (idx < posList.length) {
+      const fromCell = LOCAL_PATH[color][posList[idx - 1]];
+      const toCell = LOCAL_PATH[color][posList[idx]];
+      const dir = computeDirection(fromCell, toCell);
+      setOverlaySprite(overlay, color, "daudna", dir, true);
+      placeOverlayAtCell(overlay, toCell, true);
       idx++;
-      setTimeout(stepNext, STEP_DURATION);
+      setTimeout(stepNext, STEP_DELAY);
+    } else if (newPos === 56) {
+      // घर/center पहुंचना — आख़िरी छलांग खुशी के साथ
+      setOverlaySprite(overlay, color, "khushi", "front", true);
+      placeOverlayAtCell(overlay, [7, 7], true);
+      setTimeout(() => finishMovement(color, pieceIndex, oldPos, newPos, overlay), KHUSHI_FLASH_MS);
     } else {
-      // सफर खत्म
-      floater.remove();
-      movingPieceKey = null;
-      finalizeMove(color, pieceIndex, oldPos, newPos);
+      finishMovement(color, pieceIndex, oldPos, newPos, overlay);
     }
   }
-
-  // थोड़ा इंतज़ार ताकि transition शुरू हो सके
-  requestAnimationFrame(() => {
-    requestAnimationFrame(stepNext);
-  });
+  setTimeout(stepNext, 30); // छोटा delay ताकि शुरुआती जगह पहले बिना animation के set हो जाए
 }
 
-function finalizeMove(color, pieceIndex, oldPos, newPos) {
-  // इस चाल के हिसाब से गोटी का mood तय करें (सिर्फ़ आख़िरी/रुकी हुई जगह पर)
-  if (newPos === 56) {
-    pieceMoods[color][pieceIndex] = "jeet";
-  } else if (oldPos === -1) {
-    pieceMoods[color][pieceIndex] = "khushi"; // घर से बाहर निकलना
-  } else if (diceValue >= 4) {
-    pieceMoods[color][pieceIndex] = "daudna"; // तेज़ दौड़ना
-  } else {
-    pieceMoods[color][pieceIndex] = "udaas"; // 1-2-3 पर धीरे उदास
-  }
+function finishMovement(color, pieceIndex, oldPos, newPos, overlay) {
+  piecePositions[color][pieceIndex] = newPos;
+  overlay.remove();
+  movingPieceKey = null;
 
   let captured = false;
   // Capturing check — सिर्फ़ shared path (0-50) पर, safe cell पर नहीं
@@ -606,13 +526,11 @@ function finalizeMove(color, pieceIndex, oldPos, newPos) {
             const [orr, occ] = LOCAL_PATH[otherColor][otherPos];
             if (orr === r && occ === c) {
               piecePositions[otherColor][i] = -1; // वापस यार्ड में
-              pieceMoods[otherColor][i] = "ladkhadana"; // चक्कर खाते हुए लौटी
               captured = true;
             }
           }
         }
       });
-      if (captured) pieceMoods[color][pieceIndex] = "gussa"; // मारने वाली गोटी का ग़ुस्सा
     }
   }
 

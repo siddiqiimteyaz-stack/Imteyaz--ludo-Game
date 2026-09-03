@@ -210,31 +210,40 @@ body {
   from { background-position: 0% 0; }
   to   { background-position: 100% 0; }
 }
-/* हर रंग-mood combo की तस्वीर + असली frame-count + चाल की रफ़्तार (24 combos) — animation यहां नहीं, सिर्फ़ .is-moving पर लगेगी */
-.sprite-red-khushi { background-image:url("red_khushi.png"); background-size:800% 100%; --frames:8; --dur:0.9s; }
-.sprite-red-ladkhadana { background-image:url("red_ladkhadana.png"); background-size:400% 100%; --frames:4; --dur:1.2s; }
-.sprite-red-daudna { background-image:url("red_daudna.png"); background-size:800% 100%; --frames:8; --dur:0.5s; }
-.sprite-red-gussa { background-image:url("red_gussa.png"); background-size:400% 100%; --frames:4; --dur:0.5s; }
-.sprite-red-udaas { background-image:url("red_udaas.png"); background-size:600% 100%; --frames:6; --dur:1.1s; }
-.sprite-red-jeet { background-image:url("red_jeet.png"); background-size:600% 100%; --frames:6; --dur:0.9s; }
-.sprite-green-khushi { background-image:url("green_khushi.png"); background-size:600% 100%; --frames:6; --dur:0.9s; }
-.sprite-green-ladkhadana { background-image:url("green_ladkhadana.png"); background-size:400% 100%; --frames:4; --dur:1.2s; }
-.sprite-green-daudna { background-image:url("green_daudna.png"); background-size:600% 100%; --frames:6; --dur:0.5s; }
-.sprite-green-gussa { background-image:url("green_gussa.png"); background-size:400% 100%; --frames:4; --dur:0.5s; }
-.sprite-green-udaas { background-image:url("green_udaas.png"); background-size:600% 100%; --frames:6; --dur:1.1s; }
-.sprite-green-jeet { background-image:url("green_jeet.png"); background-size:600% 100%; --frames:6; --dur:0.9s; }
-.sprite-yellow-khushi { background-image:url("yellow_khushi.png"); background-size:600% 100%; --frames:6; --dur:0.9s; }
-.sprite-yellow-ladkhadana { background-image:url("yellow_ladkhadana.png"); background-size:800% 100%; --frames:8; --dur:1.2s; }
-.sprite-yellow-daudna { background-image:url("yellow_daudna.png"); background-size:800% 100%; --frames:8; --dur:0.5s; }
-.sprite-yellow-gussa { background-image:url("yellow_gussa.png"); background-size:400% 100%; --frames:4; --dur:0.5s; }
-.sprite-yellow-udaas { background-image:url("yellow_udaas.png"); background-size:600% 100%; --frames:6; --dur:1.1s; }
-.sprite-yellow-jeet { background-image:url("yellow_jeet.png"); background-size:400% 100%; --frames:4; --dur:0.9s; }
-.sprite-blue-khushi { background-image:url("blue_khushi.png"); background-size:400% 100%; --frames:4; --dur:0.9s; }
-.sprite-blue-ladkhadana { background-image:url("blue_ladkhadana.png"); background-size:400% 100%; --frames:4; --dur:1.2s; }
-.sprite-blue-daudna { background-image:url("blue_daudna.png"); background-size:800% 100%; --frames:8; --dur:0.5s; }
-.sprite-blue-gussa { background-image:url("blue_gussa.png"); background-size:400% 100%; --frames:4; --dur:0.5s; }
-.sprite-blue-udaas { background-image:url("blue_udaas.png"); background-size:600% 100%; --frames:6; --dur:1.1s; }
-.sprite-blue-jeet { background-image:url("blue_jeet.png"); background-size:600% 100%; --frames:6; --dur:0.9s; }
+/* हर रंग-mood-दिशा combo की तस्वीर + frame-count + रफ़्तार (20 combos — daudna की 4 दिशाएं, khushi सिर्फ़ front) */
+.sprite-red-daudna-front { background-image:url("red_daudna_front_6f.png"); background-size:600% 100%; --frames:6; --dur:0.5s; }
+.sprite-red-daudna-back { background-image:url("red_daudna_back_6f.png"); background-size:600% 100%; --frames:6; --dur:0.5s; }
+.sprite-red-daudna-left { background-image:url("red_daudna_left_6f.png"); background-size:600% 100%; --frames:6; --dur:0.5s; }
+.sprite-red-daudna-right { background-image:url("red_daudna_right_6f.png"); background-size:600% 100%; --frames:6; --dur:0.5s; }
+.sprite-red-khushi-front { background-image:url("red_khushi_front_6f.png"); background-size:600% 100%; --frames:6; --dur:0.7s; }
+.sprite-green-daudna-front { background-image:url("green_daudna_front_6f.png"); background-size:600% 100%; --frames:6; --dur:0.5s; }
+.sprite-green-daudna-back { background-image:url("green_daudna_back_6f.png"); background-size:600% 100%; --frames:6; --dur:0.5s; }
+.sprite-green-daudna-left { background-image:url("green_daudna_left_6f.png"); background-size:600% 100%; --frames:6; --dur:0.5s; }
+.sprite-green-daudna-right { background-image:url("green_daudna_right_6f.png"); background-size:600% 100%; --frames:6; --dur:0.5s; }
+.sprite-green-khushi-front { background-image:url("green_khushi_front_6f.png"); background-size:600% 100%; --frames:6; --dur:0.7s; }
+.sprite-yellow-daudna-front { background-image:url("yellow_daudna_front_6f.png"); background-size:600% 100%; --frames:6; --dur:0.5s; }
+.sprite-yellow-daudna-back { background-image:url("yellow_daudna_back_6f.png"); background-size:600% 100%; --frames:6; --dur:0.5s; }
+.sprite-yellow-daudna-left { background-image:url("yellow_daudna_left_6f.png"); background-size:600% 100%; --frames:6; --dur:0.5s; }
+.sprite-yellow-daudna-right { background-image:url("yellow_daudna_right_6f.png"); background-size:600% 100%; --frames:6; --dur:0.5s; }
+.sprite-yellow-khushi-front { background-image:url("yellow_khushi_front_6f.png"); background-size:600% 100%; --frames:6; --dur:0.7s; }
+.sprite-blue-daudna-front { background-image:url("blue_daudna_front_6f.png"); background-size:600% 100%; --frames:6; --dur:0.5s; }
+.sprite-blue-daudna-back { background-image:url("blue_daudna_back_6f.png"); background-size:600% 100%; --frames:6; --dur:0.5s; }
+.sprite-blue-daudna-left { background-image:url("blue_daudna_left_6f.png"); background-size:600% 100%; --frames:6; --dur:0.5s; }
+.sprite-blue-daudna-right { background-image:url("blue_daudna_right_6f.png"); background-size:600% 100%; --frames:6; --dur:0.5s; }
+.sprite-blue-khushi-front { background-image:url("blue_khushi_front_6f.png"); background-size:600% 100%; --frames:6; --dur:0.7s; }
+
+/* चलती हुई गोटी — पूरे board पर absolute-positioned, cell-से-cell असल में smooth सरकती है
+   (JS सिर्फ़ left/top बदलता है, यही transition उसे "रील" नहीं बल्कि लगातार सरकता हुआ दिखाती है) */
+.piece.overlayPiece {
+  position: absolute;
+  width: 6.6667%;
+  height: 6.6667%;
+  left: 0;
+  top: 0;
+  transition: left 0.26s linear, top 0.26s linear;
+  z-index: 20;
+  pointer-events: none;
+}
 .piece.stacked {
   position: absolute;
   width: 78%;
@@ -290,17 +299,4 @@ body {
 
 @media(max-width: 500px) {
   .piece { font-size: 8px; }
-}
-
-/* ===== Floating piece (smooth step-by-step movement) ===== */
-.piece.floating-piece {
-  position: absolute !important;
-  z-index: 50 !important;
-  pointer-events: none !important;
-  margin: 0 !important;
-  filter: drop-shadow(0 3px 6px rgba(0,0,0,.55));
-}
-.piece.floating-piece .spriteInner {
-  width: 100%;
-  height: 100%;
 }
