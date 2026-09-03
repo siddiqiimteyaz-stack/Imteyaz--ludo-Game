@@ -291,3 +291,16 @@ body {
 @media(max-width: 500px) {
   .piece { font-size: 8px; }
 }
+
+/* ===== Floating piece (smooth step-by-step movement) ===== */
+.piece.floating-piece {
+  position: absolute !important;
+  z-index: 50 !important;
+  pointer-events: none !important;
+  margin: 0 !important;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,.55));
+}
+.piece.floating-piece .spriteInner {
+  width: 100%;
+  height: 100%;
+}

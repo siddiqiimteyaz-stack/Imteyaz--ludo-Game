@@ -409,9 +409,36 @@ function onPieceClick(color, pieceIndex) {
   movePiece(color, pieceIndex);
 }
 
-// गोटी को track पर एक-एक cell करके चलाना (असली movement जैसा एहसास)
+// गोटी को track पर एक-एक cell करके स्मूथ चलाना (कदम-दर-कदम, बिना जंप)
 let isAnimatingMove = false;
-const STEP_DELAY = 220; // हर cell पर रुकने का समय (ms)
+const STEP_DURATION = 280; // हर cell तक स्लाइड का समय (ms)
+
+// किसी cell का बोर्ड के अंदर center position (px) निकालना
+function getCellCenterOnBoard(cellDom) {
+  const board = document.getElementById("board");
+  if (!board || !cellDom) return null;
+  const boardRect = board.getBoundingClientRect();
+  const cellRect = cellDom.getBoundingClientRect();
+  return {
+    left: cellRect.left - boardRect.left + cellRect.width / 2,
+    top:  cellRect.top  - boardRect.top  + cellRect.height / 2,
+    size: Math.min(cellRect.width, cellRect.height) * 0.85
+  };
+}
+
+// यार्ड या center के लिए भी position निकालना
+function getTargetCenter(color, pos) {
+  let cellDom;
+  if (pos === -1) {
+    cellDom = document.getElementById("yardBox-" + color);
+  } else if (pos === 56) {
+    cellDom = getCellDom(7, 7);
+  } else {
+    const [r, c] = LOCAL_PATH[color][pos];
+    cellDom = getCellDom(r, c);
+  }
+  return getCellCenterOnBoard(cellDom);
+}
 
 function movePiece(color, pieceIndex) {
   if (isAnimatingMove) return;
@@ -422,28 +449,86 @@ function movePiece(color, pieceIndex) {
   isAnimatingMove = true;
   movingPieceKey = color + "_" + pieceIndex;
 
-  // यार्ड से बाहर निकलना = 1 कदम; बाक़ी movement = दांव जितने कदम, एक-एक cell
+  // यात्रा के दौरान कौन सा मूड चलेगा (एक बार तय)
+  let travelMood;
+  if (oldPos === -1) {
+    travelMood = "khushi";          // यार्ड से बाहर निकलना
+  } else if (diceValue <= 3) {
+    travelMood = "udaas";            // 1-2-3 पर धीरे उदास चलना
+  } else {
+    travelMood = "daudna";           // 4-5-6 पर तेज़ दौड़ना
+  }
+  pieceMoods[color][pieceIndex] = travelMood;
+
+  // कदमों की सूची
   const steps = oldPos === -1 ? [0] : [];
   if (oldPos !== -1) {
     for (let p = oldPos + 1; p <= newPos; p++) steps.push(p);
   }
 
+  const board = document.getElementById("board");
+
+  // पुरानी गोटी को हटाकर एक floating absolute गोटी बनाएं जो स्लाइड करेगी
+  // पहले render करके मौजूदा जगह पर गोटी दिखा दें, फिर उसे उठा लें
+  renderBoard();
+
+  // floating piece बनाएं
+  const floater = document.createElement("div");
+  floater.className = "piece " + color + " floating-piece";
+  floater.style.position = "absolute";
+  floater.style.zIndex = "50";
+  floater.style.pointerEvents = "none";
+  floater.style.transition = `left ${STEP_DURATION}ms linear, top ${STEP_DURATION}ms linear`;
+  floater.style.margin = "0";
+  floater.style.transform = "translate(-50%, -50%)";
+
+  const spriteInner = document.createElement("div");
+  spriteInner.className = `spriteInner sprite-${color}-${travelMood} is-moving`;
+  floater.appendChild(spriteInner);
+
+  // शुरू की जगह
+  const startCenter = getTargetCenter(color, oldPos === -1 ? -1 : oldPos);
+  if (startCenter) {
+    floater.style.width  = startCenter.size + "px";
+    floater.style.height = startCenter.size + "px";
+    floater.style.left   = startCenter.left + "px";
+    floater.style.top    = startCenter.top + "px";
+  }
+
+  board.appendChild(floater);
+
+  // असली गोटी को छुपा दें (floating दिखेगी)
+  document.querySelectorAll(`.piece[data-color="${color}"][data-piece-index="${pieceIndex}"]`).forEach(p => {
+    p.style.visibility = "hidden";
+  });
+
   let idx = 0;
   function stepNext() {
     if (idx < steps.length) {
-      // हर कदम पर — चलते हुए/दौड़ते हुए दिखाएं (असल motion यहीं दिखती है)
-      piecePositions[color][pieceIndex] = steps[idx];
-      pieceMoods[color][pieceIndex] = "daudna";
-      renderBoard();
+      const targetPos = steps[idx];
+      const center = getTargetCenter(color, targetPos);
+      if (center) {
+        floater.style.width  = center.size + "px";
+        floater.style.height = center.size + "px";
+        floater.style.left   = center.left + "px";
+        floater.style.top    = center.top + "px";
+      }
+      // लॉजिकल पोजीशन अपडेट (बाकी गोटियों के लिए)
+      piecePositions[color][pieceIndex] = targetPos;
       idx++;
-      setTimeout(stepNext, STEP_DELAY);
+      setTimeout(stepNext, STEP_DURATION);
     } else {
-      // चलना ख़त्म — अब स्थिर हो जाएं, यहीं असली mood और capturing logic लगेगी
+      // सफर खत्म
+      floater.remove();
       movingPieceKey = null;
       finalizeMove(color, pieceIndex, oldPos, newPos);
     }
   }
-  stepNext();
+
+  // थोड़ा इंतज़ार ताकि transition शुरू हो सके
+  requestAnimationFrame(() => {
+    requestAnimationFrame(stepNext);
+  });
 }
 
 function finalizeMove(color, pieceIndex, oldPos, newPos) {
