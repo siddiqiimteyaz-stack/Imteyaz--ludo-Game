@@ -8,17 +8,30 @@
 </head>
 <body>
 
-<header class="topbar">🎲 हंसी वाला लूडो</header>
+<header class="topbar">
+  🎲 हंसी वाला लूडो
+  <button id="muteBtn" class="muteBtn" title="आवाज़ बंद/चालू करें">🔊</button>
+</header>
 
 <!-- Mode चुनने वाली शुरुआती screen -->
 <div id="modeScreen" class="modeScreen">
   <h2>कैसे खेलना है?</h2>
   <button id="vsAiBtn" class="modeBtn">🤖 Computer (AI) के खिलाफ़</button>
-  <button id="pass4Btn" class="modeBtn">👨‍👩‍👧‍👦 4 दोस्त (एक मोबाइल पर बारी-बारी)</button>
+  <button id="pass4Btn" class="modeBtn">👨‍👩‍👧‍👦 दोस्तों के साथ (एक मोबाइल पर बारी-बारी)</button>
+</div>
+
+<!-- कितने खिलाड़ी (सिर्फ़ pass-mode और AI mode दोनों के लिए) -->
+<div id="playerCountScreen" class="modeScreen" style="display:none;">
+  <h2>कितने खिलाड़ी?</h2>
+  <button class="modeBtn playerCountBtn" data-count="2">2 खिलाड़ी</button>
+  <button class="modeBtn playerCountBtn" data-count="3">3 खिलाड़ी</button>
+  <button class="modeBtn playerCountBtn" data-count="4">4 खिलाड़ी</button>
 </div>
 
 <!-- असली खेल वाला हिस्सा -->
 <div id="gameScreen" class="gameScreen" style="display:none;">
+
+  <div id="championBanner" class="championBanner" style="display:none;"></div>
 
   <div id="diceFace" class="diceFace turn-red">
     <div class="dot" style="visibility:hidden;"></div>
@@ -31,6 +44,13 @@
   <div class="controls">
     <button id="restartBtn" class="restartBtn">🔄 दोबारा शुरू करें</button>
   </div>
+</div>
+
+<!-- खेल पूरी तरह ख़त्म होने पर नतीजे -->
+<div id="finalScreen" class="finalScreen" style="display:none;">
+  <h2>🏁 खेल ख़त्म!</h2>
+  <div id="rankingList" class="rankingList"></div>
+  <button id="finalRestartBtn" class="restartBtn">🔄 नया खेल शुरू करें</button>
 </div>
 
 <script src="game.js"></script>

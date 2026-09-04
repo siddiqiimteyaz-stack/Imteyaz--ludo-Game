@@ -67,14 +67,24 @@ let piecePositions = {}; // piecePositions[color][pieceIndex] = -1 (यार्
 let awaitingMove = false;
 let consecutiveSixes = 0;
 let movingPieceKey = null; // "color_pieceIndex" — सिर्फ़ यही गोटी अभी असल में हिल रही है, बाक़ी सब स्थिर
+let finishedColors = new Set(); // जिन रंगों की सारी 4 गोटियां घर पहुंच चुकी हैं
+let finishOrder = [];           // जीतने का क्रम (पहला, दूसरा, ...)
 
-function initGame(mode) {
+const PLAYER_SETS = {
+  2: ["red", "yellow"],           // आमने-सामने के कोने
+  3: ["red", "green", "yellow"],
+  4: ["red", "green", "yellow", "blue"],
+};
+
+function initGame(mode, count) {
   gameMode = mode;
-  players = mode === "ai" ? ["red", "green", "yellow", "blue"] : ["red", "green", "yellow", "blue"];
+  players = PLAYER_SETS[count] || PLAYER_SETS[4];
   currentPlayerIndex = 0;
   diceValue = 0;
   awaitingMove = false;
   consecutiveSixes = 0;
+  finishedColors = new Set();
+  finishOrder = [];
 
   piecePositions = {};
   COLORS.forEach(c => {
@@ -82,7 +92,16 @@ function initGame(mode) {
   });
 
   document.getElementById("modeScreen").style.display = "none";
+  document.getElementById("playerCountScreen").style.display = "none";
+  document.getElementById("finalScreen").style.display = "none";
+  const banner = document.getElementById("championBanner");
+  banner.style.display = "none";
+  banner.textContent = "";
   document.getElementById("gameScreen").style.display = "block";
+
+  const diceFaceEl = document.getElementById("diceFace");
+  diceFaceEl.style.pointerEvents = "";
+  diceFaceEl.style.opacity = "";
 
   buildBoardDom();
   renderBoard();
@@ -198,7 +217,7 @@ function renderBoard() {
   // पहले हर गोटी की "target जगह" (DOM element) पता करें, और उसी हिसाब से समूह बनाएं
   const groups = new Map(); // key: DOM element, value: [{color, pieceIndex}]
 
-  COLORS.forEach(color => {
+  players.forEach(color => {
     for (let i = 0; i < 4; i++) {
       const pos = piecePositions[color][i];
       let targetDom;
@@ -317,25 +336,50 @@ function renderDiceFace(value) {
   }
 }
 
-// हल्की सी "टक-टक" आवाज़ — बिना किसी बाहरी audio file के, सीधे browser से
-function playDiceSound() {
+// हल्की-फुल्की आवाज़ें — बिना किसी बाहरी audio file के, सीधे browser से (Web Audio API)
+let soundOn = true;
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+function playTone(freq, startOffset, duration, type, volume) {
+  if (!soundOn) return;
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    for (let i = 0; i < 5; i++) {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "square";
-      osc.frequency.value = 300 + Math.random() * 400;
-      gain.gain.value = 0.06;
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      const startAt = ctx.currentTime + i * 0.09;
-      osc.start(startAt);
-      gain.gain.setValueAtTime(0.06, startAt);
-      gain.gain.exponentialRampToValueAtTime(0.001, startAt + 0.08);
-      osc.stop(startAt + 0.09);
-    }
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type || "sine";
+    osc.frequency.value = freq;
+    gain.gain.value = volume || 0.12;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    const startAt = ctx.currentTime + startOffset;
+    osc.start(startAt);
+    gain.gain.setValueAtTime(gain.gain.value, startAt);
+    gain.gain.exponentialRampToValueAtTime(0.001, startAt + duration);
+    osc.stop(startAt + duration + 0.02);
   } catch (e) { /* आवाज़ न बजे तो भी खेल चलता रहे */ }
+}
+function playDiceSound() {
+  for (let i = 0; i < 5; i++) playTone(300 + Math.random() * 400, i * 0.09, 0.08, "square", 0.06);
+}
+function playExitSound() {
+  // यार्ड से बाहर निकलने पर — छोटी उछलती धुन
+  [523.25, 659.25, 783.99].forEach((f, i) => playTone(f, i * 0.08, 0.15, "triangle", 0.1));
+}
+function playHomeSound() {
+  // घर/center पहुंचने पर — बड़ी जश्न वाली धुन (exit से अलग, लंबी)
+  [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => playTone(f, i * 0.09, 0.25, "triangle", 0.12));
+}
+function playCaptureSound() {
+  // किसी को मारने पर — तेज़, जीत जैसी आवाज़
+  [880, 1108.73].forEach((f, i) => playTone(f, i * 0.06, 0.12, "sawtooth", 0.1));
+}
+function playCapturedSound() {
+  // मार खाकर यार्ड लौटने पर — उतरती हुई उदास आवाज़
+  [440, 349.23, 293.66].forEach((f, i) => playTone(f, i * 0.09, 0.18, "sine", 0.09));
 }
 
 // =========================
@@ -472,6 +516,7 @@ function movePiece(color, pieceIndex) {
     // यार्ड से बाहर निकलना — sliding नहीं, सीधे track की पहली cell पर खुशी के साथ प्रकट होना
     placeOverlayAtCell(overlay, LOCAL_PATH[color][0], false);
     setOverlaySprite(overlay, color, "khushi", "front", true);
+    playExitSound();
     setTimeout(() => finishMovement(color, pieceIndex, oldPos, newPos, overlay), KHUSHI_FLASH_MS);
     return;
   }
@@ -497,6 +542,7 @@ function movePiece(color, pieceIndex) {
       // घर/center पहुंचना — आख़िरी छलांग खुशी के साथ
       setOverlaySprite(overlay, color, "khushi", "front", true);
       placeOverlayAtCell(overlay, [7, 7], true);
+      playHomeSound();
       setTimeout(() => finishMovement(color, pieceIndex, oldPos, newPos, overlay), KHUSHI_FLASH_MS);
     } else {
       finishMovement(color, pieceIndex, oldPos, newPos, overlay);
@@ -540,6 +586,8 @@ function finishMovement(color, pieceIndex, oldPos, newPos, overlay) {
   if (newPos === 56) {
     setMessage(`🏆 ${COLOR_NAMES[color]} की एक गोटी घर पहुंच गई!`);
   } else if (captured) {
+    playCaptureSound();
+    playCapturedSound();
     setMessage(`💥 ${COLOR_NAMES[color]} ने किसी को मार दिया!`);
   } else {
     setMessage("");
@@ -553,19 +601,28 @@ function finishMovement(color, pieceIndex, oldPos, newPos, overlay) {
 // 7. बारी बदलना
 // =========================
 function handleTurnEnd(extraTurn) {
+  const current = players[currentPlayerIndex];
+  const currentFinished = finishedColors.has(current);
+
   if (diceValue === 6) {
     consecutiveSixes++;
   } else {
     consecutiveSixes = 0;
   }
 
-  if (extraTurn && consecutiveSixes < 3) {
+  // जो खिलाड़ी अभी-अभी अपनी आख़िरी गोटी घर पहुंचाकर जीत चुका है, उसे अतिरिक्त बारी नहीं मिलेगी
+  if (extraTurn && !currentFinished && consecutiveSixes < 3) {
     updateStatus();
+    if (gameMode === "ai" && current !== "red") {
+      setTimeout(() => document.getElementById("diceFace").click(), 600);
+    }
     return; // वही खिलाड़ी फिर से खेलेगा
   }
 
   consecutiveSixes = 0;
-  currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+  do {
+    currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+  } while (finishedColors.has(players[currentPlayerIndex]));
   updateStatus();
 
   if (gameMode === "ai" && players[currentPlayerIndex] !== "red") {
@@ -583,12 +640,49 @@ function setMessage(msg) {
   document.getElementById("messageText").textContent = msg;
 }
 
+function showChampionBanner(color) {
+  const el = document.getElementById("championBanner");
+  el.textContent = `🏆 ${COLOR_NAMES[color]} सबसे पहले जीता — चैंपियन!`;
+  el.style.display = "block";
+}
+
+function endGame() {
+  // जो खिलाड़ी अभी तक नहीं जीता, वो आख़िरी नंबर पर अपने-आप आ जाता है
+  const remaining = players.filter(c => !finishedColors.has(c));
+  const fullOrder = [...finishOrder, ...remaining];
+  const medals = ["🥇", "🥈", "🥉", "4️⃣"];
+
+  const list = document.getElementById("rankingList");
+  list.innerHTML = "";
+  fullOrder.forEach((color, i) => {
+    const row = document.createElement("div");
+    row.className = "rankingRow";
+    row.innerHTML = `<span class="medal">${medals[i] || (i + 1) + "."}</span><span>${COLOR_NAMES[color]}</span>`;
+    list.appendChild(row);
+  });
+
+  document.getElementById("gameScreen").style.display = "none";
+  document.getElementById("finalScreen").style.display = "block";
+}
+
+// गोटी घर पहुंचने के बाद हर बार यह जांचें — बग-फ़िक्स: पहले खिलाड़ी के जीतते ही
+// पासा पूरी तरह बंद हो जाता था चाहे बाक़ी खिलाड़ी अभी खेल ही रहे हों।
+// अब: जब तक सिर्फ़ एक खिलाड़ी बचा न हो (बाक़ी सब जीत या हार चुके), खेल जारी रहेगा।
 function checkWinner(color) {
-  if (piecePositions[color].every(p => p === 56)) {
-    setMessage(`🎉🎉 ${COLOR_NAMES[color]} जीत गया! 🎉🎉`);
-    const diceFaceEl = document.getElementById("diceFace");
-    diceFaceEl.style.pointerEvents = "none";
-    diceFaceEl.style.opacity = "0.4";
+  if (finishedColors.has(color)) return;
+  if (!piecePositions[color].every(p => p === 56)) return;
+
+  finishedColors.add(color);
+  finishOrder.push(color);
+
+  if (finishOrder.length === 1) {
+    showChampionBanner(color); // सबसे पहला विजेता
+  } else {
+    setMessage(`🏆 ${COLOR_NAMES[color]} भी जीत गया!`);
+  }
+
+  if (finishOrder.length >= players.length - 1) {
+    endGame(); // सिर्फ़ एक खिलाड़ी बचा है — अब खेल सच में ख़त्म
   }
 }
 
@@ -628,12 +722,34 @@ function pickAiMove(color, dice, movable) {
 // =========================
 // 9. Start / Restart Buttons
 // =========================
-document.getElementById("vsAiBtn").addEventListener("click", () => initGame("ai"));
-document.getElementById("pass4Btn").addEventListener("click", () => initGame("pass4"));
-document.getElementById("restartBtn").addEventListener("click", () => {
+let pendingMode = null;
+document.getElementById("vsAiBtn").addEventListener("click", () => {
+  pendingMode = "ai";
+  document.getElementById("modeScreen").style.display = "none";
+  document.getElementById("playerCountScreen").style.display = "block";
+});
+document.getElementById("pass4Btn").addEventListener("click", () => {
+  pendingMode = "pass4";
+  document.getElementById("modeScreen").style.display = "none";
+  document.getElementById("playerCountScreen").style.display = "block";
+});
+document.querySelectorAll(".playerCountBtn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    initGame(pendingMode, parseInt(btn.dataset.count, 10));
+  });
+});
+function backToModeScreen() {
   document.getElementById("gameScreen").style.display = "none";
+  document.getElementById("finalScreen").style.display = "none";
   document.getElementById("modeScreen").style.display = "block";
   const diceFaceEl = document.getElementById("diceFace");
   diceFaceEl.style.pointerEvents = "";
   diceFaceEl.style.opacity = "";
+}
+document.getElementById("restartBtn").addEventListener("click", backToModeScreen);
+document.getElementById("finalRestartBtn").addEventListener("click", backToModeScreen);
+document.getElementById("muteBtn").addEventListener("click", () => {
+  soundOn = !soundOn;
+  document.getElementById("muteBtn").textContent = soundOn ? "🔊" : "🔇";
+  if (soundOn) getAudioCtx(); // यूज़र के इशारे पर audio फिर से चालू (mobile की ज़रूरत)
 });
