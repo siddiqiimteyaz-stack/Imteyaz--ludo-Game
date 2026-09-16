@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Imteyaz Ludo Game</title>
+  <meta name="description" content="हंसी वाला लूडो - Hindi Ludo board game with animated character moods and vs Computer AI or Pass & Play multiplayer.">
+  <meta property="og:title" content="Imteyaz Ludo Game">
+  <meta property="og:description" content="हंसी वाला लूडो - Hindi Ludo board game with animated character moods and vs Computer AI or Pass & Play multiplayer.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-logo">🎲</div>
+      <div class="topbar-title-box">
+        <h1>IMTEYAZ LUDO</h1>
+        <span>हंसी वाला लूडो • animated moods</span>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button id="rulesBtn" class="topbar-btn" title="खेल के नियम">📖 <span>नियम</span></button>
+      <button id="bgmBtn" class="topbar-btn" title="संगीत चालू/बंद">🎵 <span>संगीत</span></button>
+      <button id="muteBtn" class="topbar-btn active" title="आवाज़ चालू/बंद">🔊 <span>आवाज़</span></button>
+    </div>
+  </header>
+
+  <!-- Main Screen Container -->
+  <main class="screen-container">
+
+    <!-- 1. Mode Selection Screen -->
+    <section id="modeScreen" class="modeScreen">
+      <div class="mode-hero">
+        <div class="mode-mascot-preview">
+          <div class="mini-mascot red"><div class="spriteInner sprite-red-khushi"></div></div>
+          <div class="mini-mascot green"><div class="spriteInner sprite-green-jeet"></div></div>
+          <div class="mini-mascot yellow"><div class="spriteInner sprite-yellow-khushi"></div></div>
+          <div class="mini-mascot blue"><div class="spriteInner sprite-blue-jeet"></div></div>
+        </div>
+        <h2>कैसे खेलना चाहते हैं?</h2>
+        <p>असली लूडो का मज़ा, हंसते-बोलते कैरेक्टरों के साथ!</p>
+      </div>
+
+      <div class="mode-cards">
+        <button id="vsAiBtn" class="mode-card-btn">
+          <div class="mode-icon">🤖</div>
+          <div class="mode-info">
+            <h3>कंप्यूटर (AI) के खिलाफ़</h3>
+            <p>स्मार्ट रोबोट खिलाड़ियों के साथ खेलें — कभी भी, अकेले भी!</p>
+          </div>
+        </button>
+
+        <button id="pass4Btn" class="mode-card-btn">
+          <div class="mode-icon">👨‍👩‍👧‍👦</div>
+          <div class="mode-info">
+            <h3>दोस्तों के साथ (Pass & Play)</h3>
+            <p>एक ही मोबाइल पर बारी-बारी दोस्तों व परिवार के साथ खेलें</p>
+          </div>
+        </button>
+      </div>
+    </section>
+
+    <!-- 2. Player Count & Setup Screen -->
+    <section id="playerCountScreen" class="modeScreen" style="display:none;">
+      <div class="mode-hero">
+        <h2 id="setupScreenTitle">कितने खिलाड़ी खेलेंगे?</h2>
+        <p>अपनी पसंद के अनुसार बोर्ड चुनें</p>
+      </div>
+
+      <div class="player-count-grid">
+        <button class="playerCountBtn" data-count="2">
+          <span class="count-number">2</span>
+          <span class="count-label">खिलाड़ी</span>
+          <div class="color-dots">
+            <span class="color-dot red" title="लाल"></span>
+            <span class="color-dot yellow" title="पीला"></span>
+          </div>
+        </button>
+
+        <button class="playerCountBtn" data-count="3">
+          <span class="count-number">3</span>
+          <span class="count-label">खिलाड़ी</span>
+          <div class="color-dots">
+            <span class="color-dot red"></span>
+            <span class="color-dot green"></span>
+            <span class="color-dot yellow"></span>
+          </div>
+        </button>
+
+        <button class="playerCountBtn" data-count="4">
+          <span class="count-number">4</span>
+          <span class="count-label">खिलाड़ी</span>
+          <div class="color-dots">
+            <span class="color-dot red"></span>
+            <span class="color-dot green"></span>
+            <span class="color-dot yellow"></span>
+            <span class="color-dot blue"></span>
+          </div>
+        </button>
+      </div>
+
+      <div id="aiDifficultySection" class="ai-difficulty-box">
+        <label>कंप्यूटर का स्तर (AI Level):</label>
+        <div class="ai-diff-options">
+          <button class="diff-btn" data-diff="easy">🟢 सरल</button>
+          <button class="diff-btn selected" data-diff="normal">🟡 सामान्य</button>
+          <button class="diff-btn" data-diff="hard">🔴 प्रो</button>
+        </div>
+      </div>
+
+      <button id="backToModeBtn" class="screen-back-btn">← पीछे जाएं</button>
+    </section>
+
+    <!-- 3. Active Game Screen -->
+    <section id="gameScreen" class="gameScreen" style="display:none;">
+
+      <!-- Champion in-game alert -->
+      <div id="championBanner" class="championBanner" style="display:none;"></div>
+
+      <!-- Top Players Stations (Red: Top-Left, Green: Top-Right matching Yard Quadrants) -->
+      <div class="players-bar players-bar-top">
+        <!-- RED Player Station (Top-Left Yard) -->
+        <div id="playerCard-red" class="player-card red">
+          <div class="player-avatar">
+            <div id="avatarSprite-red" class="spriteInner sprite-red-khushi"></div>
+            <div class="turn-pulse-ring"></div>
+          </div>
+          <div class="player-details">
+            <div class="player-name-row">
+              <span id="playerName-red" class="player-name">लाल (आप)</span>
+              <span class="turn-badge">टर्न</span>
+            </div>
+            <div class="player-stats-row">
+              <span class="stat-chip" title="यार्ड में">🏠<span id="yardCount-red">4</span></span>
+              <span class="stat-chip" title="ट्रैक पर">🏃<span id="trackCount-red">0</span></span>
+              <span class="stat-chip" title="घर पहुंचे">🏆<span id="homeCount-red">0</span></span>
+            </div>
+          </div>
+          <!-- Corner 3D Dice for Red -->
+          <div class="corner-dice-station" id="cornerDice-red">
+            <div id="diceFace-red" class="cornerDiceFace turn-red" title="लाल का पासा">
+              <div class="dot"></div>
+            </div>
+            <span class="dice-roll-prompt">पासा फेंकें</span>
+          </div>
+          <div id="bubble-red" class="player-bubble">मेरी बारी!</div>
+        </div>
+
+        <!-- GREEN Player Station (Top-Right Yard) -->
+        <div id="playerCard-green" class="player-card green">
+          <div class="player-avatar">
+            <div id="avatarSprite-green" class="spriteInner sprite-green-khushi"></div>
+            <div class="turn-pulse-ring"></div>
+          </div>
+          <div class="player-details">
+            <div class="player-name-row">
+              <span id="playerName-green" class="player-name">हरा</span>
+              <span class="turn-badge">टर्न</span>
+            </div>
+            <div class="player-stats-row">
+              <span class="stat-chip" title="यार्ड में">🏠<span id="yardCount-green">4</span></span>
+              <span class="stat-chip" title="ट्रैक पर">🏃<span id="trackCount-green">0</span></span>
+              <span class="stat-chip" title="घर पहुंचे">🏆<span id="homeCount-green">0</span></span>
+            </div>
+          </div>
+          <!-- Corner 3D Dice for Green -->
+          <div class="corner-dice-station" id="cornerDice-green">
+            <div id="diceFace-green" class="cornerDiceFace turn-green" title="हरे का पासा">
+              <div class="dot"></div>
+            </div>
+            <span class="dice-roll-prompt">पासा फेंकें</span>
+          </div>
+          <div id="bubble-green" class="player-bubble">चलो खेलते हैं!</div>
+        </div>
+      </div>
+
+      <!-- Turn & Live Match Status Banner -->
+      <div class="match-status-bar">
+        <div class="turn-pill">
+          <span id="turnPlayerTag" class="turn-player-tag red">लाल</span>
+          <span id="turnActionHint" class="turn-action-hint">की बारी है</span>
+        </div>
+        <div id="messageText" class="messageText">🎲 कोने में दिए पासे पर टैप करें</div>
+        <div id="sixStreakBadge" class="six-streak-badge">2 छक्के!</div>
+      </div>
+
+      <!-- Authentic 15x15 Ludo Board -->
+      <div class="board-wrapper">
+        <div id="board" class="board"></div>
+      </div>
+
+      <!-- Bottom Players Stations (Blue: Bottom-Left, Yellow: Bottom-Right matching Yard Quadrants) -->
+      <div class="players-bar players-bar-bottom">
+        <!-- BLUE Player Station (Bottom-Left Yard) -->
+        <div id="playerCard-blue" class="player-card blue">
+          <div class="player-avatar">
+            <div id="avatarSprite-blue" class="spriteInner sprite-blue-khushi"></div>
+            <div class="turn-pulse-ring"></div>
+          </div>
+          <div class="player-details">
+            <div class="player-name-row">
+              <span id="playerName-blue" class="player-name">नीला</span>
+              <span class="turn-badge">टर्न</span>
+            </div>
+            <div class="player-stats-row">
+              <span class="stat-chip" title="यार्ड में">🏠<span id="yardCount-blue">4</span></span>
+              <span class="stat-chip" title="ट्रैक पर">🏃<span id="trackCount-blue">0</span></span>
+              <span class="stat-chip" title="घर पहुंचे">🏆<span id="homeCount-blue">0</span></span>
+            </div>
+          </div>
+          <!-- Corner 3D Dice for Blue -->
+          <div class="corner-dice-station" id="cornerDice-blue">
+            <div id="diceFace-blue" class="cornerDiceFace turn-blue" title="नीले का पासा">
+              <div class="dot"></div>
+            </div>
+            <span class="dice-roll-prompt">पासा फेंकें</span>
+          </div>
+          <div id="bubble-blue" class="player-bubble">तैयार हूँ!</div>
+        </div>
+
+        <!-- YELLOW Player Station (Bottom-Right Yard) -->
+        <div id="playerCard-yellow" class="player-card yellow">
+          <div class="player-avatar">
+            <div id="avatarSprite-yellow" class="spriteInner sprite-yellow-khushi"></div>
+            <div class="turn-pulse-ring"></div>
+          </div>
+          <div class="player-details">
+            <div class="player-name-row">
+              <span id="playerName-yellow" class="player-name">पीला</span>
+              <span class="turn-badge">टर्न</span>
+            </div>
+            <div class="player-stats-row">
+              <span class="stat-chip" title="यार्ड में">🏠<span id="yardCount-yellow">4</span></span>
+              <span class="stat-chip" title="ट्रैक पर">🏃<span id="trackCount-yellow">0</span></span>
+              <span class="stat-chip" title="घर पहुंचे">🏆<span id="homeCount-yellow">0</span></span>
+            </div>
+          </div>
+          <!-- Corner 3D Dice for Yellow -->
+          <div class="corner-dice-station" id="cornerDice-yellow">
+            <div id="diceFace-yellow" class="cornerDiceFace turn-yellow" title="पीले का पासा">
+              <div class="dot"></div>
+            </div>
+            <span class="dice-roll-prompt">पासा फेंकें</span>
+          </div>
+          <div id="bubble-yellow" class="player-bubble">मज़ा आएगा!</div>
+        </div>
+      </div>
+
+      <!-- Social / Comic Reaction Bar with Auto indicator (हंसी वाला लूडो) -->
+      <div class="reaction-bar">
+        <div class="auto-reaction-indicator" title="खेल के दौरान स्वचालित कॉमिक रिएक्शन चालू हैं">
+          <span class="pulse-green-dot"></span>
+          <span>🤖 ऑटो रिएक्शन चालू</span>
+        </div>
+        <div class="reaction-chips-wrap">
+          <button class="reaction-chip" data-mood="khushi" data-text="हाहाहा! मज़ा आ गया! 😂">😂 हँसी</button>
+          <button class="reaction-chip" data-mood="gussa" data-text="अब देख तेरा क्या करता हूँ! 😡">😡 गुस्सा</button>
+          <button class="reaction-chip" data-mood="udaas" data-text="अरे यार! ये क्या हुआ! 😭">😭 रोना</button>
+          <button class="reaction-chip" data-mood="jeet" data-text="आज तो मैं ही जीतूँगा! 🕺">🕺 जश्न</button>
+          <button class="reaction-chip" data-mood="ladkhadana" data-text="भगवान, एक छक्का दिला दो! 🎲">🎲 दुआ</button>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="restartBtn" class="restartBtn" style="background:#1e293b; border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px; color:#cbd5e1; font-size:13px; font-weight:600; cursor:pointer; width:100%; transition:all 0.2s;">🔄 खेल छोड़कर मुख्य मेन्यू पर जाएं</button>
+      </div>
+    </section>
+
+    <!-- 4. Final Results / Podium Screen -->
+    <section id="finalScreen" class="finalScreen" style="display:none;">
+      <div class="final-podium-header">
+        <h2>🏁 खेल सम्पन्न!</h2>
+        <p>शानदार मुकाबला रहा — हंसी और जश्न के साथ!</p>
+      </div>
+
+      <!-- 3D Victory Podium Display -->
+      <div class="podium-display">
+        <div class="podium-slot second">
+          <div id="podiumChar-2" class="podium-character"><div class="spriteInner"></div></div>
+          <div class="podium-pillar">2</div>
+        </div>
+        <div class="podium-slot first">
+          <div id="podiumChar-1" class="podium-character"><div class="spriteInner"></div></div>
+          <div class="podium-pillar">🏆 1</div>
+        </div>
+        <div class="podium-slot third">
+          <div id="podiumChar-3" class="podium-character"><div class="spriteInner"></div></div>
+          <div class="podium-pillar">3</div>
+        </div>
+      </div>
+
+      <div id="rankingList" class="rankingList"></div>
+
+      <div class="final-action-btns">
+        <button id="finalRestartBtn" class="btn-primary">🔄 नया खेल शुरू करें</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Floating Comic Mood Pop-up Banner -->
+  <div id="comicMoodBanner" class="comic-mood-banner">
+    <div class="comic-mood-avatar">
+      <div id="comicMoodInner" class="spriteInner"></div>
+    </div>
+    <div class="comic-mood-text">
+      <h4 id="comicMoodTitle">लाल का रिएक्शन</h4>
+      <p id="comicMoodSubtitle">"मज़ा आ गया!"</p>
+    </div>
+  </div>
+
+  <!-- Rules Modal -->
+  <div id="rulesModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>📜 लूडो के नियम</h3>
+        <button id="closeRulesBtn" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="rule-item">
+          <div class="rule-icon">🎲</div>
+          <div>
+            <h4>गोटी बाहर निकालना</h4>
+            <p>पासे में <strong>6</strong> आने पर ही यार्ड से नई गोटी बाहर निकलती है और तुरंत एक अतिरिक्त चाल मिलती है।</p>
+          </div>
+        </div>
+        <div class="rule-item">
+          <div class="rule-icon">⭐</div>
+          <div>
+            <h4>सुरक्षित खाने (Safe Spots)</h4>
+            <p>तारे (★) वाले 8 खाने सुरक्षित हैं। इन खानों पर बैठी किसी भी गोटी को कोई दूसरा खिलाड़ी नहीं काट सकता।</p>
+          </div>
+        </div>
+        <div class="rule-item">
+          <div class="rule-icon">💥</div>
+          <div>
+            <h4>गोटी काटना (Capture)</h4>
+            <p>सामान्य खाने पर विरोधी की गोटी पर पहुँचने पर वह कटकर वापस अपने यार्ड में चली जाती है, और काटने वाले को एक अतिरिक्त चाल मिलती है!</p>
+          </div>
+        </div>
+        <div class="rule-item">
+          <div class="rule-icon">🚫</div>
+          <div>
+            <h4>लगातार 3 छक्कों का नियम</h4>
+            <p>यदि लगातार 3 बार 6 आता है, तो तीसरा 6 रद्द हो जाता है और पासा अगले खिलाड़ी के पास चला जाता है।</p>
+          </div>
+        </div>
+        <div class="rule-item">
+          <div class="rule-icon">🏆</div>
+          <div>
+            <h4>जीतना (Home)</h4>
+            <p>जिस खिलाड़ी की सभी 4 गोटियाँ सबसे पहले केंद्र (Home) में पहुँचती हैं, वह विजेता बनता है।</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Canvas for Celebration Confetti -->
+  <canvas id="confettiCanvas"></canvas>
+
+  <script src="game.js"></script>
+</body>
+</html>

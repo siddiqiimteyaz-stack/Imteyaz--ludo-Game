@@ -8,8 +8,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = 3000;
 
-// Serve static assets from workspace directory
+// Serve static assets from workspace directory and public directory
 app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, "public")));
 
 // Single Page Application fallback to index.html
 app.get("*", (req, res) => {
