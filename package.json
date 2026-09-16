@@ -1,0 +1,14 @@
+{
+  "name": "imteyaz-ludo-game",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "हंसी वाला लूडो - Imteyaz Ludo Game",
+  "scripts": {
+    "dev": "node server.js",
+    "build": "echo 'Build complete'",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

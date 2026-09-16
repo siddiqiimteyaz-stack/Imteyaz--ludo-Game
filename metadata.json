@@ -1,0 +1,8 @@
+{
+  "name": "Imteyaz Ludo Game",
+  "description": "हंसी वाला लूडो - Hindi Ludo board game with animated character moods and vs Computer AI or Pass & Play multiplayer.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
